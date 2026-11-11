@@ -202,6 +202,3 @@ Generated capture files should be kept separate from the committed example. Sens
 - Export plots and summaries with run metadata such as sensor model and calibration date.
 - Add configurable framing, checksum, or a more robust serial protocol for noisy links.
 
-## License
-
-This project is distributed under the MIT License. See [`LICENSE`](LICENSE).
