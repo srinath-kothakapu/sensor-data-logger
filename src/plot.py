@@ -13,7 +13,7 @@ from collections import deque
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from sources import serial_source, simulated_source
+from sources import SensorTimeout, serial_source, simulated_source
 
 
 def load_csv(path):
@@ -59,7 +59,12 @@ def plot_live(source, window=200):
     state = {"n": 0}
 
     def update(_frame):
-        temperature, humidity = next(source)
+        try:
+            temperature, humidity = next(source)
+        except SensorTimeout as err:
+            print(f"ERROR: {err}")
+            plt.close(fig)
+            return line1, line2
         state["n"] += 1
         t_buf.append(state["n"])
         temp_buf.append(temperature)
@@ -85,6 +90,8 @@ def main():
     parser.add_argument("--port")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--simulate", action="store_true")
+    parser.add_argument("--allow-legacy", action="store_true",
+                        help="also accept old unframed 'temp,hum' lines without a CRC")
     args = parser.parse_args()
 
     if args.csv:
@@ -93,7 +100,7 @@ def main():
         if args.simulate:
             source = simulated_source()
         elif args.port:
-            source = serial_source(args.port, args.baud)
+            source = serial_source(args.port, args.baud, require_crc=not args.allow_legacy)
         else:
             parser.error("live plot needs --port <port> or --simulate")
         plot_live(source)

@@ -7,11 +7,12 @@ Examples:
 
 import argparse
 import csv
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-from sources import serial_source, simulated_source
+from sources import DEFAULT_WATCHDOG_S, FrameStats, SensorTimeout, serial_source, simulated_source
 
 HEADER = ["time_iso", "elapsed_s", "temperature_c", "humidity_pct"]
 
@@ -46,17 +47,31 @@ def main() -> None:
     parser.add_argument("--rate", type=float, default=5.0, help="simulator samples per second")
     parser.add_argument("--duration", type=float, default=60.0, help="logging time in seconds")
     parser.add_argument("--out", default="data/log.csv")
+    parser.add_argument("--watchdog", type=float, default=DEFAULT_WATCHDOG_S,
+                        help="stop with an error if no valid frame arrives for this many seconds")
+    parser.add_argument("--allow-legacy", action="store_true",
+                        help="also accept old unframed 'temp,hum' lines without a CRC")
     args = parser.parse_args()
 
+    stats = None
     if args.simulate:
         source = simulated_source(args.rate)
     elif args.port:
-        source = serial_source(args.port, args.baud)
+        stats = FrameStats()
+        source = serial_source(args.port, args.baud, require_crc=not args.allow_legacy,
+                               watchdog_s=args.watchdog, stats=stats)
     else:
         parser.error("give --port <port> or use --simulate")
 
-    n = log(source, Path(args.out), args.duration)
+    try:
+        n = log(source, Path(args.out), args.duration)
+    except SensorTimeout as err:
+        # rows already written are kept: the file is flushed after every sample
+        print(f"ERROR: {err}. Partial log kept in {args.out}", file=sys.stderr)
+        sys.exit(2)
     print(f"Wrote {n} samples to {args.out}")
+    if stats is not None:
+        print(f"Frame check: {stats.summary()}")
 
 
 if __name__ == "__main__":
