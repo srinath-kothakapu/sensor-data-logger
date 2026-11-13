@@ -1,5 +1,7 @@
 # Sensor Data Logger and Plotter
 
+![CI](https://github.com/srinath-kothakapu/sensor-data-logger/actions/workflows/ci.yml/badge.svg)
+
 This repository is a small Python toolkit for collecting, plotting, and inspecting temperature and relative-humidity readings from a microcontroller. It can read a text stream over a serial (UART) port or use a built-in simulator, write timestamped CSV logs, display live charts, plot a saved run, and calculate basic statistics for both channels.
 
 The simulator follows the same input interface as a serial device, so the logger, plotter, and analysis commands work with either source. That makes it possible to explore the complete workflow without connecting a board, while keeping hardware-specific input isolated in one source module.
@@ -41,9 +43,8 @@ $23.45,41.2*BE
 
 ## Requirements and installation
 
-- Python 3.9 or newer
+- Python 3.10 or newer (CI runs the tests on 3.10 and 3.12)
 - pip
-- A webcam is not required; this project uses either a serial device or simulator
 - For physical hardware: a board that emits the expected UART text format and a USB-to-serial connection
 
 Create a virtual environment and install the dependencies:
